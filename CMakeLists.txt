@@ -94,7 +94,7 @@ if(WIN32 AND BUILD_SHARED_LIBS AND (MSVC OR CMAKE_CXX_COMPILER_ID MATCHES "Clang
 endif()
 
 add_library(enet
-    #${INCLUDE_FILES}
+    ${INCLUDE_FILES}
     ${SOURCE_FILES}
 )
 

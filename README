@@ -1,4 +1,4 @@
-this fork supports growtopia and socks5
+	this fork supports growtopia and socks5
 
 Please visit the ENet homepage at http://sauerbraten.org/enet/ for installation
 and usage instructions.
@@ -16,4 +16,8 @@ autoreconf -vfi
 
 example usage is in the test folder
 
+specify -DBUILD_TEST=YES if you want to build the tests. (only supported in CMake)
 
+
+Special thanks to
+https://github.com/sTYzaBUvqRIj (BotHax) 
