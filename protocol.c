@@ -1284,10 +1284,18 @@ enet_protocol_receive_incoming_commands (ENetHost * host, ENetEvent * event)
        buffer.data = host -> packetData [0];
        buffer.dataLength = sizeof (host -> packetData [0]);
 
-       receivedLength = enet_socket_receive (host -> socket,
-                                             & host -> receivedAddress,
-                                             & buffer,
-                                             1);
+       if (host->socks5Tunnel != NULL) {
+           receivedLength = enet_socks5_udp_receive(host->socks5Tunnel,
+               &host->receivedAddress,
+               &buffer,
+               1);
+       }
+       else {
+           receivedLength = enet_socket_receive(host->socket,
+               &host->receivedAddress,
+               &buffer,
+               1);
+       }
 
        if (receivedLength == -2)
          continue;
@@ -1790,8 +1798,11 @@ enet_protocol_send_outgoing_commands (ENetHost * host, ENetEvent * event, int ch
 
         currentPeer -> lastSendTime = host -> serviceTime;
 
-        sentLength = enet_socket_send (host -> socket, & currentPeer -> address, host -> buffers, host -> bufferCount);
-
+        if (host->socks5Tunnel)
+            sentLength = enet_socks5_udp_send(host -> socks5Tunnel, &currentPeer->address, host -> buffers, host -> bufferCount);
+        else 
+            sentLength = enet_socket_send(host->socket, &currentPeer->address, host->buffers, host->bufferCount);
+        
         enet_protocol_remove_sent_unreliable_commands (currentPeer, & sentUnreliableCommands);
 
         if (sentLength < 0)

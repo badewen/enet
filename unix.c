@@ -352,6 +352,10 @@ enet_socket_set_option (ENetSocket socket, ENetSocketOption option, int value)
             result = setsockopt (socket, IPPROTO_IP, IP_TTL, (char *) & value, sizeof (int));
             break;
 
+        case ENET_SOCKOPT_KEEPALIVE:
+            result = setsockopt(socket, SOL_SOCKET, SO_KEEPALIVE, (char*)&value, sizeof(int));
+            break;
+
         default:
             break;
     }

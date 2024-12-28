@@ -1,3 +1,5 @@
+this fork supports growtopia and socks5
+
 Please visit the ENet homepage at http://sauerbraten.org/enet/ for installation
 and usage instructions.
 
@@ -11,5 +13,7 @@ autoreconf -vfi
 # Compile and install the library.
 
 ./configure && make && make install
+
+example usage is in the test folder
 
 

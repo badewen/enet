@@ -17,6 +17,7 @@
 #include "enet/protocol.h"
 #include "enet/list.h"
 #include "enet/callbacks.h"
+#include "enet/socks5.h"
 
 #define ENET_VERSION_MAJOR 1
 #define ENET_VERSION_MINOR 3
@@ -58,7 +59,8 @@ typedef enum _ENetSocketOption
    ENET_SOCKOPT_SNDTIMEO  = 7,
    ENET_SOCKOPT_ERROR     = 8,
    ENET_SOCKOPT_NODELAY   = 9,
-   ENET_SOCKOPT_TTL       = 10
+   ENET_SOCKOPT_TTL       = 10,
+   ENET_SOCKOPT_KEEPALIVE = 11
 } ENetSocketOption;
 
 typedef enum _ENetSocketShutdown
@@ -149,6 +151,90 @@ typedef struct _ENetPacket
    ENetPacketFreeCallback   freeCallback;    /**< function to be called when the packet is no longer in use */
    void *                   userData;        /**< application private data, may be freely modified */
 } ENetPacket;
+
+typedef struct _ENetSocks5Tunnel
+{
+    ENetSocket controlTcpSocket;
+    ENetAddress controlTcpAddress;
+    ENetSocket udpSocket;
+    ENetAddress udpAddress;
+
+    char* username;
+    char* password;
+} ENetSocks5Tunnel;
+
+typedef struct _ENetSocks5MethodSelectionReq
+{
+    enet_uint8 version;
+    enet_uint8 numMethods;
+    ENetSocks5AuthMethod* methods;
+} ENetSocks5MethodSelectionReq;
+
+typedef struct _ENetSocks5MethodSelectionResp
+{
+    enet_uint8 version;
+    ENetSocks5AuthMethod method;
+} ENetSocks5MethodSelectionResp;
+
+typedef struct _ENetSocks5UserPwAuthReq
+{
+    enet_uint8 version;
+    enet_uint8 usernameLen;
+    char* username;
+    enet_uint8 passwordLen;
+    char* password;
+} ENetSocks5UserPwAuthReq;
+
+typedef struct _ENetSocks5UserPwAuthRes
+{
+    enet_uint8 version;
+    enet_uint8 not_success; // false = success
+} ENetSocks5UserPwAuthResp;
+
+typedef struct _ENetSocks5ControlMsgReq
+{
+    enet_uint8 version;
+    ENetSocks5ControlCommand command;
+    enet_uint8 reserved;
+    enet_uint8 addressType;
+
+    union {
+        enet_uint32 ipv4;
+        const char* domainName;
+    } dstAddr;
+
+    enet_uint16 dstPort; 
+} ENetSocks5ControlMsgReq;
+
+typedef struct _ENetSocks5ControlMsgResp
+{
+    enet_uint8 version;
+    ENetSocks5ResponseCode respCode;
+    enet_uint8 reserved;
+    ENetSocks5AddressType addrType;
+
+    union {
+        enet_uint32 ipv4;
+        const char* domainName;
+    } bindAddr;
+
+    enet_uint16 bindPort; 
+} ENetSocks5ControlMsgResp;
+
+typedef struct _ENetSocks5UdpHeader
+{
+    enet_uint16 reserved;
+    enet_uint8 fragNum;
+    ENetSocks5AddressType addrType;
+
+    union {
+        enet_uint32 ipv4;
+        const char* domainName;
+    } dstAddr;
+
+    enet_uint16 dstPort;
+} ENetSocks5UdpHeader;
+
 
 typedef struct _ENetAcknowledgement
 {
@@ -358,6 +444,7 @@ typedef int (ENET_CALLBACK * ENetInterceptCallback) (struct _ENetHost * host, st
   */
 typedef struct _ENetHost
 {
+   ENetSocks5Tunnel*    socks5Tunnel;
    ENetSocket           socket;
    ENetAddress          address;                     /**< Internet address of the host */
    enet_uint32          incomingBandwidth;           /**< downstream bandwidth of the host */
@@ -384,9 +471,9 @@ typedef struct _ENetHost
    ENetAddress          receivedAddress;
    enet_uint8 *         receivedData;
    size_t               receivedDataLength;
-   enet_uint32          totalSentData;               /**< total data sent, user should reset to 0 as needed to prevent overflow */
+   enet_uint32          totalSentData;               /**< total data sent, user should reset to 0 as needed to prevent overflow. NOTE: If you are using a tunnel, this also includes the socsk5 header size aswell */
    enet_uint32          totalSentPackets;            /**< total UDP packets sent, user should reset to 0 as needed to prevent overflow */
-   enet_uint32          totalReceivedData;           /**< total data received, user should reset to 0 as needed to prevent overflow */
+   enet_uint32          totalReceivedData;           /**< total data received, user should reset to 0 as needed to prevent overflow. NOTE: If you are using a tunnel, this also includes the socsk5 header size aswell */
    enet_uint32          totalReceivedPackets;        /**< total UDP packets received, user should reset to 0 as needed to prevent overflow */
    ENetInterceptCallback intercept;                  /**< callback the user can set to intercept received raw UDP packets */
    size_t               connectedPeers;
@@ -606,7 +693,18 @@ ENET_API void * enet_range_coder_create (void);
 ENET_API void   enet_range_coder_destroy (void *);
 ENET_API size_t enet_range_coder_compress (void *, const ENetBuffer *, size_t, size_t, enet_uint8 *, size_t);
 ENET_API size_t enet_range_coder_decompress (void *, const enet_uint8 *, size_t, enet_uint8 *, size_t);
-   
+  
+ENET_API ENetSocks5Tunnel*  enet_socks5_create(const ENetAddress* socks5Address, const char* username, const char* password);
+ENET_API ENetSocks5Status   enet_socks5_connect(ENetSocks5Tunnel* tunnel);
+ENET_API ENetSocks5Status   enet_socks5_authenticate(ENetSocks5Tunnel* tunnel);
+ENET_API ENetSocks5Status   enet_socks5_open_udp(ENetSocks5Tunnel* tunnel, ENetSocks5ResponseCode* respCode);
+ENET_API ENetSocks5Status   enet_socsk5_connect_udp_socket(ENetSocks5Tunnel* tunnel);
+
+ENET_API int enet_socks5_udp_send(ENetSocks5Tunnel* tunnel, ENetAddress* targetAddress, ENetBuffer* buffers, size_t bufferCount);
+ENET_API int enet_socks5_udp_receive(ENetSocks5Tunnel* tunnel, ENetAddress* address, ENetBuffer* buffers, size_t bufferCount);
+ENET_API void enet_socsk5_destroy(ENetSocks5Tunnel* tunnel);
+ENET_API void enet_host_use_socks5(ENetHost* host, ENetSocks5Tunnel* tunnel);
+
 extern size_t enet_protocol_command_size (enet_uint8);
 
 #ifdef __cplusplus

@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 2.8.12...3.20)
+set(CMAKE_C_STANDARD_REQUIRED 23)
 
 project(enet)
 
@@ -68,6 +69,7 @@ set(INCLUDE_FILES
     ${INCLUDE_FILES_PREFIX}/unix.h
     ${INCLUDE_FILES_PREFIX}/utility.h
     ${INCLUDE_FILES_PREFIX}/win32.h
+    ${INCLUDE_FILES_PREFIX}/socks5.h
 )
 
 set(SOURCE_FILES
@@ -79,7 +81,9 @@ set(SOURCE_FILES
     peer.c
     protocol.c
     unix.c
-    win32.c)
+    win32.c
+    socks5.c
+)
 
 source_group(include FILES ${INCLUDE_FILES})
 source_group(source FILES ${SOURCE_FILES})
@@ -90,7 +94,7 @@ if(WIN32 AND BUILD_SHARED_LIBS AND (MSVC OR CMAKE_CXX_COMPILER_ID MATCHES "Clang
 endif()
 
 add_library(enet
-    ${INCLUDE_FILES}
+    #${INCLUDE_FILES}
     ${SOURCE_FILES}
 )
 
@@ -107,3 +111,7 @@ install(TARGETS enet
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/enet
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
+
+if (BUILD_TEST MATCHES "YES")
+    add_subdirectory(test)
+endif()
