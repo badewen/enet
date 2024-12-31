@@ -20,7 +20,7 @@ enet_socks5_is_auth_method_supported(ENetSocks5AuthMethod method)
 	return found;
 }
 
-static int 
+static int
 enet_socks5_is_addr_type_supported(ENetSocks5AddressType addrType)
 {
 	int found = 0;
@@ -43,10 +43,10 @@ enet_socks5_destroy_buffer(ENetBuffer* buff)
 	enet_free((void*)buff);
 }
 
-static ENetBuffer* 
+static ENetBuffer*
 enet_socks5_create_buffer(size_t size)
 {
-	ENetBuffer* buffer = enet_malloc(sizeof(ENetBuffer));
+	ENetBuffer* buffer = (ENetBuffer*)enet_malloc(sizeof(ENetBuffer));
 
 	if (buffer == NULL) {
 		enet_free(buffer);
@@ -108,7 +108,7 @@ enet_socks5_create_method_selection_req(enet_uint8 methodNum, const enet_uint8 m
 	if (methods == NULL)
 		return NULL;
 
-	ENetSocks5MethodSelectionReq* req = enet_malloc(sizeof(ENetSocks5MethodSelectionReq));
+	ENetSocks5MethodSelectionReq* req = (ENetSocks5MethodSelectionReq*)enet_malloc(sizeof(ENetSocks5MethodSelectionReq));
 
 	if (req == NULL) {
 		enet_free(req);
@@ -119,7 +119,7 @@ enet_socks5_create_method_selection_req(enet_uint8 methodNum, const enet_uint8 m
 	memset(req, 0, sizeof(ENetSocks5MethodSelectionReq));
 	req->version = 0x5;
 	req->numMethods = methodNum;
-	req->methods = enet_malloc(sizeof(enet_uint8) * req->numMethods);
+	req->methods = (ENetSocks5AuthMethod*)enet_malloc(sizeof(enet_uint8) * req->numMethods);
 
 	if (req->methods == NULL) {
 		enet_free(req->methods);
@@ -140,7 +140,7 @@ enet_socks5_create_from_buff_method_selection_resp(const ENetBuffer* buff)
 		return NULL;
 	}
 
-	ENetSocks5MethodSelectionResp* resp = enet_malloc(sizeof(ENetSocks5MethodSelectionResp)); 
+	ENetSocks5MethodSelectionResp* resp = (ENetSocks5MethodSelectionResp*)enet_malloc(sizeof(ENetSocks5MethodSelectionResp));
 
 	if (resp == NULL) {
 		enet_free(resp);
@@ -172,7 +172,7 @@ enet_socks5_create_user_pw_auth_req(const char* username, const char* password)
 		return NULL;
 	}
 
-	ENetSocks5UserPwAuthReq* req = enet_malloc(sizeof(ENetSocks5UserPwAuthReq));
+	ENetSocks5UserPwAuthReq* req = (ENetSocks5UserPwAuthReq*)enet_malloc(sizeof(ENetSocks5UserPwAuthReq));
 
 	if (req == NULL) {
 		enet_free(req);
@@ -186,7 +186,7 @@ enet_socks5_create_user_pw_auth_req(const char* username, const char* password)
 	req->usernameLen = (enet_uint8)strlen(username);
 	req->passwordLen = (enet_uint8)strlen(password);
 
-	req->username = enet_malloc(req->usernameLen + 1);
+	req->username = (char*)enet_malloc(req->usernameLen + 1);
 	if (req->username == NULL) {
 		enet_free(req->username);
 		enet_free(req);
@@ -196,7 +196,7 @@ enet_socks5_create_user_pw_auth_req(const char* username, const char* password)
 	memset(req->username, 0, req->usernameLen + 1);
 	memcpy(req->username, username, req->usernameLen);
 
-	req->password = enet_malloc(req->passwordLen + 1);
+	req->password = (char*)enet_malloc(req->passwordLen + 1);
 	if (req->password == NULL) {
 		enet_free(req->password);
 		enet_free(req->username);
@@ -239,23 +239,23 @@ enet_socks5_create_buff_from_user_pw_auth_req(const ENetSocks5UserPwAuthReq* req
 		return NULL;
 	}
 
-	memset(buff->data,												req->version, 1);
-	memset((enet_uint8*)(buff->data) + 1,							req->usernameLen, 1);
-	memcpy((enet_uint8*)(buff->data) + 2,							req->username, req->usernameLen);
-	memset((enet_uint8*)(buff->data) + 2 + req->usernameLen,		req->passwordLen, 1);
-	memcpy((enet_uint8*)(buff->data) + 2 + req->usernameLen + 1,	req->password, req->passwordLen);
+	memset(buff->data, req->version, 1);
+	memset((enet_uint8*)(buff->data) + 1, req->usernameLen, 1);
+	memcpy((enet_uint8*)(buff->data) + 2, req->username, req->usernameLen);
+	memset((enet_uint8*)(buff->data) + 2 + req->usernameLen, req->passwordLen, 1);
+	memcpy((enet_uint8*)(buff->data) + 2 + req->usernameLen + 1, req->password, req->passwordLen);
 
 	return buff;
 }
 
-static ENetSocks5UserPwAuthResp* 
+static ENetSocks5UserPwAuthResp*
 enet_socks5_create_from_buff_auth_status_resp(const ENetBuffer* buffer)
 {
 	if (buffer == NULL || buffer->data == NULL || buffer->dataLength != 2) {
 		return NULL;
 	}
 
-	ENetSocks5UserPwAuthResp* resp = enet_malloc(sizeof(ENetSocks5UserPwAuthResp));
+	ENetSocks5UserPwAuthResp* resp = (ENetSocks5UserPwAuthResp*)enet_malloc(sizeof(ENetSocks5UserPwAuthResp));
 
 	if (resp == NULL) {
 		enet_free(resp);
@@ -272,14 +272,14 @@ enet_socks5_create_from_buff_auth_status_resp(const ENetBuffer* buffer)
 }
 
 static void
-enet_socks5_destroy_auth_status_resp(ENetSocks5UserPwAuthResp* resp) 
+enet_socks5_destroy_auth_status_resp(ENetSocks5UserPwAuthResp* resp)
 {
 	if (resp == NULL) {
 		return;
 	}
 
 	enet_free(resp);
-}	
+}
 
 // address depends on the addrType.
 static ENetSocks5ControlMsgReq*
@@ -289,7 +289,7 @@ enet_socks5_create_control_msg_req(ENetSocks5ControlCommand cmd, ENetSocks5Addre
 		return NULL;
 	}
 
-	ENetSocks5ControlMsgReq* req = enet_malloc(sizeof(ENetSocks5ControlMsgReq));
+	ENetSocks5ControlMsgReq* req = (ENetSocks5ControlMsgReq*)enet_malloc(sizeof(ENetSocks5ControlMsgReq));
 
 	if (req == NULL) {
 		enet_free(req);
@@ -303,18 +303,18 @@ enet_socks5_create_control_msg_req(ENetSocks5ControlCommand cmd, ENetSocks5Addre
 	req->addressType = addrType;
 
 	if (req->addressType == ENET_SOCKS5_ADDRESS_TYPE_DOMAIN_NAME) {
-		req->dstAddr.domainName = enet_malloc(strlen(address) + 1);
-		memset(req->dstAddr.domainName, 0, strlen(address) + 1);
+		req->dstAddr.domainName = (char*)enet_malloc(strlen((const char*)address) + 1);
+		memset((void*)req->dstAddr.domainName, 0, strlen((const char*)address) + 1);
 
 		if (req->dstAddr.domainName == NULL) {
-			enet_free(req->dstAddr.domainName);
+			enet_free((void*)req->dstAddr.domainName);
 			enet_free(req);
 
 			return NULL;
 		}
 
-		strcpy(req->dstAddr.domainName, address);
-	} 
+		strcpy((char*)req->dstAddr.domainName, (char*)address);
+	}
 	else if (req->addressType == ENET_SOCKS5_ADDRESS_TYPE_IPV4) {
 		memcpy(&req->dstAddr.ipv4, address, sizeof(enet_uint32));
 	}
@@ -407,7 +407,7 @@ enet_socks5_create_from_buff_control_msg_resp(ENetBuffer* buffer, ENetSocks5Stat
 		return NULL;
 	}
 
-	ENetSocks5ControlMsgResp* resp = enet_malloc(sizeof(ENetSocks5ControlMsgResp));
+	ENetSocks5ControlMsgResp* resp = (ENetSocks5ControlMsgResp*)enet_malloc(sizeof(ENetSocks5ControlMsgResp));
 
 	if (resp == NULL) {
 		enet_free(resp);
@@ -419,9 +419,9 @@ enet_socks5_create_from_buff_control_msg_resp(ENetBuffer* buffer, ENetSocks5Stat
 	}
 
 	resp->version = *((enet_uint8*)buffer->data);
-	resp->respCode = *(((enet_uint8*)buffer->data) + 1);
+	resp->respCode = (ENetSocks5ResponseCode) * (((enet_uint8*)buffer->data) + 1);
 	resp->reserved = *(((enet_uint8*)buffer->data) + 2);
-	resp->addrType = *(((enet_uint8*)buffer->data) + 3);
+	resp->addrType = (ENetSocks5AddressType) * (((enet_uint8*)buffer->data) + 3);
 
 	if (resp->version != ENET_SOCKS5_VERSION) {
 		enet_free(resp);
@@ -446,7 +446,7 @@ enet_socks5_create_from_buff_control_msg_resp(ENetBuffer* buffer, ENetSocks5Stat
 		enet_uint8 stringLength = 0;
 		memcpy(&stringLength, ((enet_uint8*)buffer->data) + 4, sizeof(enet_uint8)); // the length octet
 
-		resp->bindAddr.domainName = enet_malloc(stringLength + 1); //include null terminator	
+		resp->bindAddr.domainName = (char*)enet_malloc(stringLength + 1); //include null terminator	
 
 		if (resp->bindAddr.domainName == NULL) {
 			enet_free(resp->bindAddr.domainName);
@@ -484,7 +484,7 @@ enet_socks5_create_udp_header(ENetSocks5AddressType addrType, void* address, ene
 		return NULL;
 	}
 
-	ENetSocks5UdpHeader* header = enet_malloc(sizeof(ENetSocks5UdpHeader));
+	ENetSocks5UdpHeader* header = (ENetSocks5UdpHeader*)enet_malloc(sizeof(ENetSocks5UdpHeader));
 
 	if (header == NULL) {
 		enet_free(header);
@@ -497,8 +497,8 @@ enet_socks5_create_udp_header(ENetSocks5AddressType addrType, void* address, ene
 	header->addrType = addrType;
 
 	if (header->addrType == ENET_SOCKS5_ADDRESS_TYPE_DOMAIN_NAME) {
-		size_t totalDomainNameSize = strlen(address) + 1;
-		header->dstAddr.domainName = enet_malloc(totalDomainNameSize);
+		size_t totalDomainNameSize = strlen((const char*)address) + 1;
+		header->dstAddr.domainName = (char*)enet_malloc(totalDomainNameSize);
 
 		if (header->dstAddr.domainName == NULL) {
 			enet_free(header->dstAddr.domainName);
@@ -606,7 +606,7 @@ enet_socks5_extract_form_buff_udp_header(ENetBuffer* buffer, size_t* headerSize)
 		return NULL;
 	}
 
-	ENetSocks5UdpHeader* header = enet_malloc(sizeof(ENetSocks5UdpHeader));
+	ENetSocks5UdpHeader* header = (ENetSocks5UdpHeader*)enet_malloc(sizeof(ENetSocks5UdpHeader));
 	memset(header, 0, sizeof(ENetSocks5UdpHeader));
 
 	if (header == NULL) {
@@ -623,8 +623,8 @@ enet_socks5_extract_form_buff_udp_header(ENetBuffer* buffer, size_t* headerSize)
 
 	if (header->addrType == ENET_SOCKS5_ADDRESS_TYPE_DOMAIN_NAME) {
 		enet_uint8 stringSize = *((enet_uint8*)buffer->data) + 4;
-		
-		char* domainName = enet_malloc(stringSize + 1);
+
+		char* domainName = (char*)enet_malloc(stringSize + 1);
 		memset(domainName, 0, stringSize + 1);
 
 		if (domainName == NULL) {
@@ -653,10 +653,10 @@ enet_socks5_extract_form_buff_udp_header(ENetBuffer* buffer, size_t* headerSize)
 	return header;
 }
 
-ENetSocks5Tunnel* 
+ENetSocks5Tunnel*
 enet_socks5_create(const ENetAddress* socks5Address, const char* username, const char* password)
 {
-	ENetSocks5Tunnel* tunnel = enet_malloc(sizeof(ENetSocks5Tunnel));
+	ENetSocks5Tunnel* tunnel = (ENetSocks5Tunnel*)enet_malloc(sizeof(ENetSocks5Tunnel));
 	memset(tunnel, 0, sizeof(ENetSocks5Tunnel));
 
 	if (tunnel == NULL) {
@@ -674,7 +674,7 @@ enet_socks5_create(const ENetAddress* socks5Address, const char* username, const
 
 	if (tunnel->controlTcpSocket == ENET_SOCKET_NULL) {
 		enet_socket_destroy(tunnel->controlTcpSocket);
-		
+
 		enet_free(tunnel);
 
 		return NULL;
@@ -723,7 +723,7 @@ enet_socks5_create(const ENetAddress* socks5Address, const char* username, const
 	if (username != NULL) {
 		size_t usernameLen = strlen(username);
 
-		tunnel->username = enet_malloc(usernameLen + 1);
+		tunnel->username = (char*)enet_malloc(usernameLen + 1);
 		memset(tunnel->username, 0, usernameLen + 1);
 
 		if (tunnel->username == NULL) {
@@ -741,7 +741,7 @@ enet_socks5_create(const ENetAddress* socks5Address, const char* username, const
 	if (password != NULL) {
 		size_t passwordLen = strlen(password);
 
-		tunnel->password = enet_malloc(passwordLen + 1);
+		tunnel->password = (char*)enet_malloc(passwordLen + 1);
 		memset(tunnel->password, 0, passwordLen + 1);
 
 		if (tunnel->password == NULL) {
@@ -754,13 +754,13 @@ enet_socks5_create(const ENetAddress* socks5Address, const char* username, const
 			return NULL;
 		}
 
-		memcpy(tunnel->password,  password, passwordLen);
+		memcpy(tunnel->password, password, passwordLen);
 	}
 
 	return tunnel;
 }
 
-ENetSocks5Status 
+ENetSocks5Status
 enet_socks5_connect(ENetSocks5Tunnel* tunnel)
 {
 	if (tunnel == NULL) {
@@ -781,7 +781,7 @@ enet_socks5_authenticate(ENetSocks5Tunnel* tunnel)
 		return ENET_SOCKS5_STATUS_INVALID_PARAM;
 	}
 
-	ENetSocks5MethodSelectionReq* methodSelReq = 
+	ENetSocks5MethodSelectionReq* methodSelReq =
 		enet_socks5_create_method_selection_req(sizeof(enetSocks5SupportedAuthMethod), enetSocks5SupportedAuthMethod);
 
 	if (methodSelReq == NULL) {
@@ -809,13 +809,12 @@ enet_socks5_authenticate(ENetSocks5Tunnel* tunnel)
 
 	enet_socks5_destroy_buffer(buffer);
 	enet_socks5_destroy_method_selection_req(methodSelReq);
-	
+
 	enet_uint8 methodSelRespRawBuffer[2] = { 0 };
-	//memset(methodSelRespRawBuffer, 0, sizeof(methodSelRespRawBuffer));
 
 	ENetBuffer methodSelRespBuffer = {
-		.data = methodSelRespRawBuffer,
-		.dataLength = sizeof(methodSelRespRawBuffer)
+		.dataLength = sizeof(methodSelRespRawBuffer),
+		.data = methodSelRespRawBuffer
 	};
 
 	size_t recvLength = 0;
@@ -833,7 +832,7 @@ enet_socks5_authenticate(ENetSocks5Tunnel* tunnel)
 		enet_socks5_destroy_method_selection_resp(methodSelResp);
 
 		return ENET_SOCKS5_STATUS_MEMORY_ERROR;
-	} 
+	}
 	else if (methodSelResp->version != ENET_SOCKS5_VERSION) {
 		enet_socks5_destroy_method_selection_resp(methodSelResp);
 
@@ -877,7 +876,7 @@ enet_socks5_authenticate(ENetSocks5Tunnel* tunnel)
 		ENetBuffer authStatusRespBuff = {
 			.dataLength = sizeof(authStatusRespRawBuff),
 			.data = authStatusRespRawBuff
-		}; 
+		};
 
 		if ((recvLength = enet_socket_receive(tunnel->controlTcpSocket, NULL, &authStatusRespBuff, 1)) < 0) {
 			return ENET_SOCKS5_STATUS_SOCKET_ERR;
@@ -906,7 +905,7 @@ enet_socks5_authenticate(ENetSocks5Tunnel* tunnel)
 
 			return ENET_SOCKS5_STATUS_WRONG_CREDENTIAL;
 		}
-		
+
 		enet_socks5_destroy_auth_status_resp(authStatusResp);
 	}
 
@@ -915,7 +914,7 @@ enet_socks5_authenticate(ENetSocks5Tunnel* tunnel)
 
 
 // respCode is optional. if specified, will write the ENetSocks5ControlMsgResp into respCode.
-ENetSocks5Status 
+ENetSocks5Status
 enet_socks5_open_udp(ENetSocks5Tunnel* tunnel, ENetSocks5ResponseCode* respCode)
 {
 	if (tunnel == NULL || tunnel->controlTcpSocket == ENET_SOCKET_NULL) {
@@ -924,7 +923,7 @@ enet_socks5_open_udp(ENetSocks5Tunnel* tunnel, ENetSocks5ResponseCode* respCode)
 
 	enet_uint32 dstAddr = 0;
 	ENetSocks5ControlMsgReq* controlMsgReq = enet_socks5_create_control_msg_req(
-		ENET_SOCKS5_CONTROL_COMMAND_UDP_ASSOCIATE, 
+		ENET_SOCKS5_CONTROL_COMMAND_UDP_ASSOCIATE,
 		ENET_SOCKS5_ADDRESS_TYPE_IPV4,
 		&tunnel->udpAddress.host, tunnel->udpAddress.port
 	);
@@ -981,7 +980,7 @@ enet_socks5_open_udp(ENetSocks5Tunnel* tunnel, ENetSocks5ResponseCode* respCode)
 
 		return ENET_SOCKS5_STATUS_MEMORY_ERROR;
 	}
- 	
+
 	if (!enet_socks5_is_addr_type_supported(controlMsgResp->addrType)) {
 		enet_socks5_destroy_control_msg_resp(controlMsgResp);
 
@@ -1027,7 +1026,7 @@ enet_socks5_open_udp(ENetSocks5Tunnel* tunnel, ENetSocks5ResponseCode* respCode)
 	enet_socks5_destroy_control_msg_resp(controlMsgResp);
 
 	tunnel->udpAddress = udpRelayAddress;
-	
+
 	return ENET_SOCKS5_STATUS_SUCCESS;
 }
 
@@ -1104,7 +1103,7 @@ enet_socks5_udp_send(ENetSocks5Tunnel* tunnel, ENetAddress* targetAddress, ENetB
 		return ENET_SOCKS5_STATUS_MEMORY_ERROR;
 	}
 
-	ENetBuffer* newBuffers = enet_malloc(sizeof(ENetBuffer) * (bufferCount + 1));
+	ENetBuffer* newBuffers = (ENetBuffer*)enet_malloc(sizeof(ENetBuffer) * (bufferCount + 1));
 
 	if (newBuffers == NULL) {
 		enet_free(newBuffers);
@@ -1117,7 +1116,7 @@ enet_socks5_udp_send(ENetSocks5Tunnel* tunnel, ENetAddress* targetAddress, ENetB
 	newBuffers[0].dataLength = udpHeaderBuff->dataLength;
 
 	memcpy(&newBuffers[1], buffers, sizeof(ENetBuffer) * bufferCount);
-	
+
 	int sentLength = enet_socket_send(tunnel->udpSocket, &tunnel->udpAddress, newBuffers, bufferCount + 1);
 
 	enet_free(newBuffers);
@@ -1126,13 +1125,13 @@ enet_socks5_udp_send(ENetSocks5Tunnel* tunnel, ENetAddress* targetAddress, ENetB
 	return sentLength;
 }
 
-int 
+int
 enet_socks5_udp_receive(ENetSocks5Tunnel* tunnel, ENetAddress* address, ENetBuffer* buffers, size_t bufferCount)
 {
 	enet_uint8 rawRecvBuffer[ENET_PROTOCOL_MAXIMUM_MTU + 262] = { 0 };
 	ENetBuffer buffer = {
-		.data = rawRecvBuffer,
-		.dataLength = sizeof(rawRecvBuffer)
+		.dataLength = sizeof(rawRecvBuffer),
+		.data = rawRecvBuffer
 	};
 
 	size_t recvLength = enet_socket_receive(tunnel->udpSocket, NULL, &buffer, 1);
@@ -1152,7 +1151,7 @@ enet_socks5_udp_receive(ENetSocks5Tunnel* tunnel, ENetAddress* address, ENetBuff
 
 	if (address != NULL) {
 		if (header->addrType == ENET_SOCKS5_ADDRESS_TYPE_DOMAIN_NAME) {
-			if (enet_address_set_host(&address, header->dstAddr.domainName) < 0) {
+			if (enet_address_set_host(address, header->dstAddr.domainName) < 0) {
 				enet_socks5_destroy_udp_header(header);
 
 				return ENET_SOCKS5_STATUS_HOSTNAME_ERROR;
@@ -1172,7 +1171,7 @@ enet_socks5_udp_receive(ENetSocks5Tunnel* tunnel, ENetAddress* address, ENetBuff
 	return recvLength - headerSize;
 }
 
-void 
+void
 enet_socsk5_destroy(ENetSocks5Tunnel* tunnel)
 {
 	if (tunnel == NULL) {
